@@ -1,0 +1,90 @@
+// ==UserScript==
+// @name         SongBPM Next Clicker (Hotkey: - )
+// @namespace    http://tampermonkey.net/
+// @contsructor  Jameingx.
+// @version      1.7.
+// @description  Scrolls to "Next", waits 1s cooldown, then clicks once per load.
+// @match        https://songbpm.com/*
+// @grant        None.
+// ==/UserScript==
+
+(function() {
+    'use strict';
+
+    // Load saved toggle state (default ON if nothing stored)
+    let enabled = localStorage.getItem("autoNextEnabled") !== "false";
+
+    // Create toggle button
+    const toggleBtn = document.createElement("button");
+     toggleBtn.innerText = enabled ? "NEXT: ON" : "NEXT: OFF";
+    toggleBtn.style.position = "fixed";
+    toggleBtn.style.bottom = "10px";
+    toggleBtn.style.right = "10px";
+    toggleBtn.style.zIndex = "9999";
+    toggleBtn.style.padding = "6px 10px";
+    toggleBtn.style.background = enabled ? "#333" : "#666";
+    toggleBtn.style.color = "#fff";
+    toggleBtn.style.border = "none";
+    toggleBtn.style.borderRadius = "6px";
+    toggleBtn.style.cursor = "pointer";
+    toggleBtn.style.fontSize = "14px";
+    toggleBtn.style.boxShadow = "0 2px 5px rgba(0,0,0,0.3)";
+    document.body.appendChild(toggleBtn);
+
+    toggleBtn.addEventListener("click", () => {
+        enabled = !enabled;
+         toggleBtn.innerText = enabled ? "NEXT: ON" : "NEXT: OFF";
+        toggleBtn.style.background = enabled ? "#333" : "#666";
+        localStorage.setItem("autoNextEnabled", enabled);
+
+        // ✅ If turned back ON, immediately try clicking
+        if (enabled) {
+            autoClickNext();
+        }
+    });
+
+    function findNextButton() {
+        return Array.from(document.querySelectorAll("a"))
+            .find(a => a.textContent.trim().toLowerCase() === "next");
+    }
+
+    function scrollAndClick(nextBtn) {
+        console.log("✅ Found Next button, scrolling to it...");
+        nextBtn.scrollIntoView({ behavior: "smooth", block: "center" });
+
+        // Wait for scroll + cooldown (1 second)
+        setTimeout(() => {
+            if (document.body.contains(nextBtn)) {
+                console.log("👉 Cooldown finished, clicking Next button...");
+                nextBtn.click();
+            }
+        }, 1000);
+    }
+
+    function autoClickNext() {
+        if (!enabled) return;
+        let nextBtn = findNextButton();
+        if (nextBtn) {
+            scrollAndClick(nextBtn);
+        } else {
+            console.log("⏳ Next button not found.");
+        }
+    }
+
+    // Hotkey: "-" key
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "-") {
+            let nextBtn = findNextButton();
+            if (nextBtn) {
+                console.log("🎹 Hotkey '-' pressed, scrolling & clicking Next...");
+                scrollAndClick(nextBtn);
+            }
+        }
+    });
+
+    // Run once after page load
+    window.addEventListener("load", () => {
+        setTimeout(autoClickNext, 800);
+    });
+
+})();
